@@ -105,10 +105,12 @@ public class MyBot : IChessBot
 
         var trMove = tr.Move;
         var moveScores = board.GetLegalMoves().Select(move => (move,
-            move == trMove ? Infinity : 0
+            move == trMove ? Infinity :
+            move.IsCapture ? (100 * (int)move.CapturePieceType - (int)move.MovePieceType) :
+            0
         )).ToArray();
-        for(int i=0; i<moveScores.Count(); i++) {
-            for(int j=i+1; j<moveScores.Count(); j++) {
+        for(int i=0; i<moveScores.Length; i++) {
+            for(int j=i+1; j<moveScores.Length; j++) {
                 if (moveScores[i].Item2 < moveScores[j].Item2) {
                     (moveScores[i], moveScores[j]) = (moveScores[j], moveScores[i]);
                 }
