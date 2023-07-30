@@ -102,7 +102,7 @@ public class MyBot : IChessBot
     {
         // build new or choose a foretold future
         present = present.GetFuture(board);
-        present.LookAhead(board, timer, 750);
+        present.LookAhead(board, timer, 700);
         present.Evaluate(board);
         // chose the best future
         present = present.ChooseFuture();
