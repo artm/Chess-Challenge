@@ -1,8 +1,18 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Collections.Generic;
 
 public class MyBot : IChessBot
 {
+    class Transposition {
+        public ulong ZobristKey;
+        public int Depth = -1;
+        public int Score;
+    }
+
+    Dictionary<ulong, Transposition> Transpositions = new Dictionary<ulong, Transposition>(100000);
+    int tableHits = 0, indexCollisions = 0;
+
     int MaxThinkTime = 700;
     static int[] PieceValue = {0, 100, 300, 300, 500, 900, 10000 };
     static int Infinity = 1000000000;
@@ -52,19 +62,39 @@ public class MyBot : IChessBot
                 if (!MayThink()) break;
             }
         }
-        Console.WriteLine("{0,10} @ {1} in {2}ms", bestScore, depth, timer.MillisecondsElapsedThisTurn);
+        Console.WriteLine(
+            "{0,10} @ {1} in {2}ms, {3} hits, {4} index collisions",
+            bestScore, depth, timer.MillisecondsElapsedThisTurn, tableHits,
+            indexCollisions
+        );
+        tableHits = 0;
         return bestMove;
     }
 
     int Search(int alpha, int beta, int depth) {
-        if (depth == 0 || !MayThink()) return Evaluate();
+        Transposition tr;
+        if (Transpositions.ContainsKey(board.ZobristKey)) {
+            tr = Transpositions[board.ZobristKey];
+            if (tr.ZobristKey != board.ZobristKey) {
+                indexCollisions++;
+                tr.ZobristKey = board.ZobristKey;
+            } else if (tr.Depth >= depth) {
+                tableHits++;
+                return tr.Score;
+            }
+        } else {
+            Transpositions[board.ZobristKey] = tr = new Transposition();
+            tr.ZobristKey = board.ZobristKey;
+        }
+        tr.Depth = depth;
+        if (depth == 0 || !MayThink()) return (tr.Score = Evaluate());
         foreach(var move in board.GetLegalMoves()) {
             board.MakeMove(move);
             var score = - Search( -beta, -alpha, depth - 1);
             board.UndoMove(move);
-            if (score >= beta) return beta;
+            if (score >= beta) return (tr.Score = beta);
             if (score > alpha) alpha = score;
         }
-        return alpha;
+        return (tr.Score = alpha);
     }
 }
