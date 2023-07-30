@@ -4,10 +4,22 @@ using System.Collections.Generic;
 
 public class MyBot : IChessBot
 {
+    enum ScoreType { None, Exact, LowerBound, UpperBound }
     struct Transposition {
+        public ScoreType ScoreType;
         public ulong ZobristKey;
         public int Depth;
         public int Score;
+        public bool IsCutoff(Board board, int depth, int alpha, int beta) {
+            return
+                ZobristKey == board.ZobristKey
+                && Depth >= depth
+                && (
+                    ScoreType == ScoreType.Exact
+                    || ScoreType == ScoreType.LowerBound && Score >= beta
+                    || ScoreType == ScoreType.UpperBound && Score <= alpha
+                );
+        }
     }
 
     int MaxThinkTime = 700;
@@ -70,21 +82,25 @@ public class MyBot : IChessBot
 
     int Search(int alpha, int beta, int depth) {
         var tti = board.ZobristKey % TTSize;
+        var alpha0 = alpha;
 
-        if ( tt[tti].ZobristKey == board.ZobristKey && tt[tti].Depth >= depth )
+        if ( tt[tti].IsCutoff(board, depth, alpha, beta) )
             return tt[tti].Score;
+        if (depth == 0 || !MayThink())
+            return Evaluate();
         tt[tti].ZobristKey = board.ZobristKey;
         tt[tti].Depth = depth;
-        if (depth == 0 || !MayThink())
-            return (tt[tti].Score = Evaluate());
         foreach(var move in board.GetLegalMoves()) {
             board.MakeMove(move);
             var score = - Search( -beta, -alpha, depth - 1);
             board.UndoMove(move);
-            if (score >= beta)
-                return (tt[tti].Score = beta);
+            if (score >= beta) {
+                tt[tti].ScoreType = ScoreType.LowerBound;
+                return tt[tti].Score = beta;
+            }
             if (score > alpha) alpha = score;
         }
-        return (tt[tti].Score = alpha);
+        tt[tti].ScoreType = alpha > alpha0 ? ScoreType.Exact : ScoreType.UpperBound;
+        return tt[tti].Score = alpha;
     }
 }
