@@ -20,6 +20,13 @@ public class MyBot : IChessBot
                     || ScoreType == ScoreType.UpperBound && Score <= alpha
                 );
         }
+        public int Store(Board board, int depth, int score, ScoreType scoreType) {
+            ZobristKey = board.ZobristKey;
+            Depth = depth;
+            Score = score;
+            ScoreType = scoreType;
+            return score; // so it can be returned easily
+        }
     }
 
     int MaxThinkTime = 700;
@@ -81,27 +88,25 @@ public class MyBot : IChessBot
     }
 
     int Search(int alpha, int beta, int depth) {
-        var alpha0 = alpha;
-
         ref Transposition tr = ref tt[board.ZobristKey % TTSize];
         if ( tr.IsCutoff(board, depth, alpha, beta) )
             return tr.Score;
 
         if (depth == 0 || !MayThink())
             return Evaluate();
-        tr.ZobristKey = board.ZobristKey;
-        tr.Depth = depth;
+
+        ScoreType scoreType = ScoreType.UpperBound;
         foreach(var move in board.GetLegalMoves()) {
             board.MakeMove(move);
             var score = - Search( -beta, -alpha, depth - 1);
             board.UndoMove(move);
-            if (score >= beta) {
-                tr.ScoreType = ScoreType.LowerBound;
-                return tr.Score = beta;
+            if (score >= beta)
+                return tr.Store(board, depth, beta, ScoreType.LowerBound);
+            if (score > alpha) {
+                alpha = score;
+                scoreType = ScoreType.Exact;
             }
-            if (score > alpha) alpha = score;
         }
-        tr.ScoreType = alpha > alpha0 ? ScoreType.Exact : ScoreType.UpperBound;
-        return tr.Score = alpha;
+        return tr.Store(board, depth, alpha, scoreType);
     }
 }
