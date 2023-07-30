@@ -3,17 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-// see 4 plys ahead and look for checkmate / captures of the most expensive
-// pieces
 public class MyBot : IChessBot
 {
     class Option {
         public Move move;
         public double score;
+        Option[] options;
 
         public Option(Move move) {
             this.move = move;
-            score = 0;
         }
     }
 
@@ -22,11 +20,11 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        var ahead = SeeAhead(board, 4);
+        var ahead = LookAhead(board, 4);
         return ahead.MaxBy(option => option.score).move;
     }
 
-    Option[] SeeAhead(Board board, int depth) {
+    Option[] LookAhead(Board board, int depth) {
         var moves = board.GetLegalMoves();
         var options = moves.Select(move => new Option(move)).ToArray();
         foreach (Option option in options) {
@@ -34,7 +32,7 @@ public class MyBot : IChessBot
             if (depth == 1) {
                 option.score = Evaluate(board);
             } else {
-                var theirOptions = SeeAhead(board, depth - 1);
+                var theirOptions = LookAhead(board, depth - 1);
                 if (theirOptions.Length > 0) {
                     // score for us is the inverse of their best move
                     option.score = - theirOptions.Select(o => o.score).Max();
