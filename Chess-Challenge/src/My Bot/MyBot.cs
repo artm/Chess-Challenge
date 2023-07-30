@@ -10,17 +10,23 @@ public class MyBot : IChessBot
     class Option {
         // board hash if the option becomes reality
         ulong ZobristKey;
-        public Move move;
+        public Move move = Move.NullMove;
         public double score;
         Option[] futures = new Option[0];
+        bool IsInitial = true;
 
         static double[] PieceValue = { 0, 1, 3, 3, 5, 9, 0};
         static Random rnd = new Random();
 
         public Option() { }
 
-        public Option(Move move) {
+        public Option(Board board, Move move) {
             this.move = move;
+            board.MakeMove(move);
+            this.ZobristKey = board.ZobristKey;
+            this.score = Option.EvaluateBoard(board);
+            var moves = board.GetLegalMoves();
+            board.UndoMove(move);
         }
 
         public Option GetFuture(Board board) {
@@ -31,31 +37,29 @@ public class MyBot : IChessBot
             }
         }
 
-        public void LookAhead(Board board, int depth) {
-            // doesn't hurt to assign this repeatedly
-            ZobristKey = board.ZobristKey;
-
-            if (depth == 0) {
-                // done looking ahead, just evaluate this position
-                score = Evaluate(board);
-                return;
+        public void LookAhead(Board board, Timer timer, int digTime) {
+            int plyCount = 0;
+            while( digTime > timer.MillisecondsElapsedThisTurn ){
+                LookFurtherAhead(board, timer, digTime);
+                plyCount++;
             }
+            Log($"Dug around { plyCount } plys ahead");
+        }
 
-            if (futures.Length == 0) {
+        void LookFurtherAhead(Board board, Timer timer, int digTime) {
+            if (this.IsInitial && digTime > timer.MillisecondsElapsedThisTurn) {
+                // try to grow further
                 var moves = board.GetLegalMoves();
-                if (moves.Length == 0) {
-                    score = Evaluate(board);
-                    return;
+                futures = moves.Select(move => new Option(board, move)).ToArray();
+                this.IsInitial = false;
+            } else {
+                // recurse
+                foreach (Option option in futures) {
+                    board.MakeMove(option.move);
+                    option.LookFurtherAhead(board, timer, digTime);
+                    board.UndoMove(option.move);
                 }
-                futures = moves.Select(move => new Option(move)).ToArray();
             }
-
-            foreach (Option option in futures) {
-                board.MakeMove(option.move);
-                option.LookAhead(board, depth - 1);
-                board.UndoMove(option.move);
-            }
-            score = - futures.Select(o => o.score).Max();
         }
 
         public Option ChooseFuture() {
@@ -63,7 +67,7 @@ public class MyBot : IChessBot
         }
 
         // evaluate the board from our point of view when it is their move
-        double Evaluate(Board board) {
+        static double EvaluateBoard(Board board) {
             if (board.IsInCheckmate()) return 1000;
 
             bool them = board.IsWhiteToMove, us = !them;
@@ -74,6 +78,16 @@ public class MyBot : IChessBot
             }
             return score;
         }
+
+        public void Evaluate(Board board) {
+            if (this.futures.Length == 0) return;
+            foreach (Option option in futures) {
+                board.MakeMove(option.move);
+                option.Evaluate(board);
+                board.UndoMove(option.move);
+            }
+            score = - futures.Select(o => o.score).Max();
+        }
     }
 
     // a single option that was chosen either by us or them
@@ -83,12 +97,10 @@ public class MyBot : IChessBot
     {
         // build new or choose a foretold future
         present = present.GetFuture(board);
-        present.LookAhead(board, 3);
+        present.LookAhead(board, timer, 250);
+        present.Evaluate(board);
         // chose the best future
         present = present.ChooseFuture();
-        if (!board.GetLegalMoves().Contains(present.move)) {
-            Log($"MyBot about to make an illegal {present.move}");
-        }
         return present.move;
     }
 }
