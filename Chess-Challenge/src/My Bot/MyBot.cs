@@ -54,7 +54,7 @@ public class MyBot : IChessBot
         bool them = board.IsWhiteToMove, us = !them;
         double score = rnd.NextDouble() - 0.5;
         for(PieceType type = PieceType.Pawn; type < PieceType.King; type++) {
-            double balance = 2 * board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
+            double balance = board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
             score += PieceValue[(int)type] * balance;
         }
         return score;
