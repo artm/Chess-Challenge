@@ -74,8 +74,6 @@ public class MyBot : IChessBot
                 score += PieceValue[(int)type] * balance;
             }
 
-            if (board.IsDraw()) score -= 5;
-
             return score;
         }
 
