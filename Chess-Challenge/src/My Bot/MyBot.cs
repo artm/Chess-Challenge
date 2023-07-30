@@ -66,7 +66,7 @@ public class MyBot : IChessBot
                 board.MakeMove(move);
                 var score = - Search(-Infinity, Infinity, depth);
                 board.UndoMove(move);
-                if (score > bestScore) {
+                if (score >= bestScore) {
                     bestScore = score;
                     bestMove = move;
                 }
