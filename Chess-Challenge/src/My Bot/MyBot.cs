@@ -6,10 +6,11 @@ public class MyBot : IChessBot
 {
     enum ScoreType { None, Exact, LowerBound, UpperBound }
     struct Transposition {
-        public ScoreType ScoreType;
         public ulong ZobristKey;
+        public Move Move;
         public int Depth;
         public int Score;
+        public ScoreType ScoreType;
         public bool IsCutoff(Board board, int depth, int alpha, int beta) {
             return
                 ZobristKey == board.ZobristKey
@@ -20,8 +21,9 @@ public class MyBot : IChessBot
                     || ScoreType == ScoreType.UpperBound && Score <= alpha
                 );
         }
-        public int Store(Board board, int depth, int score, ScoreType scoreType) {
+        public int Store(Board board, Move move, int depth, int score, ScoreType scoreType) {
             ZobristKey = board.ZobristKey;
+            Move = move;
             Depth = depth;
             Score = score;
             ScoreType = scoreType;
@@ -63,17 +65,17 @@ public class MyBot : IChessBot
     }
 
     Move SearchRoot() {
-        int bestScore = -Infinity;
+        int bestScore = -Infinity-1;
         Move bestMove = Move.NullMove;
 
-        var depth = 2;
+        var depth = 1;
         while(MayThink()) {
             depth++;
             foreach(var move in board.GetLegalMoves()) {
                 board.MakeMove(move);
                 var score = - Search(-Infinity, Infinity, depth);
                 board.UndoMove(move);
-                if (score >= bestScore) {
+                if (score > bestScore) {
                     bestScore = score;
                     bestMove = move;
                 }
@@ -95,18 +97,25 @@ public class MyBot : IChessBot
         if (depth == 0 || !MayThink())
             return Evaluate();
 
+        var bestScore = -Infinity-1;
+        var bestMove = Move.NullMove;
+
         ScoreType scoreType = ScoreType.UpperBound;
         foreach(var move in board.GetLegalMoves()) {
             board.MakeMove(move);
             var score = - Search( -beta, -alpha, depth - 1);
             board.UndoMove(move);
             if (score >= beta)
-                return tr.Store(board, depth, beta, ScoreType.LowerBound);
+                return tr.Store(board, move, depth, beta, ScoreType.LowerBound);
             if (score > alpha) {
                 alpha = score;
                 scoreType = ScoreType.Exact;
             }
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+            }
         }
-        return tr.Store(board, depth, alpha, scoreType);
+        return tr.Store(board, bestMove, depth, alpha, scoreType);
     }
 }
