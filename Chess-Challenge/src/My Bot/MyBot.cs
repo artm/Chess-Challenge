@@ -11,7 +11,8 @@ public class MyBot : IChessBot
         // board hash if the option becomes reality
         ulong ZobristKey;
         public Move move = Move.NullMove;
-        public double score;
+        public double Score;
+        public int Depth = 1;
         Option[] futures = new Option[0];
         bool IsInitial = true;
 
@@ -24,7 +25,7 @@ public class MyBot : IChessBot
             this.move = move;
             board.MakeMove(move);
             this.ZobristKey = board.ZobristKey;
-            this.score = Option.EvaluateBoard(board);
+            this.Score = Option.EvaluateBoard(board);
             var moves = board.GetLegalMoves();
             board.UndoMove(move);
         }
@@ -60,7 +61,12 @@ public class MyBot : IChessBot
         }
 
         public Option ChooseFuture() {
-            return futures.MaxBy(option => option.score);
+            //return futures.MaxBy(option => option.Score);
+            var maxScore = futures.Select(o => o.Score).Max();
+            var bestOptions = futures.Where(o => o.Score == maxScore).ToArray();
+            Log(String.Format("Selecting from {0} options with score {1,6:F2}", bestOptions.Length, maxScore));
+            var i = rnd.Next(0, bestOptions.Length);
+            return bestOptions[i];
         }
 
         // evaluate the board from our point of view when it is their move
@@ -68,13 +74,13 @@ public class MyBot : IChessBot
             if (board.IsInCheckmate()) return 100;
 
             bool them = board.IsWhiteToMove, us = !them;
-            double score = rnd.NextDouble() - 0.5;
+            double Score = 0;
             for(PieceType type = PieceType.Pawn; type < PieceType.King; type++) {
                 double balance = board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
-                score += PieceValue[(int)type] * balance;
+                Score += PieceValue[(int)type] * balance;
             }
 
-            return score;
+            return Score;
         }
 
         public void Evaluate(Board board) {
@@ -84,7 +90,9 @@ public class MyBot : IChessBot
                 option.Evaluate(board);
                 board.UndoMove(option.move);
             }
-            score = - futures.Select(o => o.score).Max();
+            var worst = futures.OrderByDescending(o => o.Score).First();
+            Score = - worst.Score;
+            Depth = worst.Depth + 1;
         }
     }
 
@@ -99,6 +107,7 @@ public class MyBot : IChessBot
         present.Evaluate(board);
         // chose the best future
         present = present.ChooseFuture();
+        Log(String.Format("Score: {0,6:F2} @ {1}", present.Score, present.Depth));
         return present.move;
     }
 }
