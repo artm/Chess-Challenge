@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+// see 4 plys ahead and look for checkmate / captures of the most expensive
+// pieces
 public class MyBot : IChessBot
 {
     class Option {
@@ -18,7 +20,7 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        var ahead = SeeAhead(board, 2);
+        var ahead = SeeAhead(board, 4);
         return ahead.MaxBy(option => option.score).move;
     }
 
