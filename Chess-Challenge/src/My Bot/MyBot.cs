@@ -1,6 +1,7 @@
 ﻿using ChessChallenge.API;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class MyBot : IChessBot
 {
@@ -101,7 +102,18 @@ public class MyBot : IChessBot
         var bestMove = Move.NullMove;
 
         ScoreType scoreType = ScoreType.UpperBound;
-        foreach(var move in board.GetLegalMoves()) {
+
+        var trMove = tr.Move;
+        var moveScores = board.GetLegalMoves().Select(move => (move,
+            move == trMove ? Infinity : 0
+        )).ToArray();
+        for(int i=0; i<moveScores.Count(); i++) {
+            for(int j=i+1; j<moveScores.Count(); j++) {
+                if (moveScores[i].Item2 < moveScores[j].Item2) {
+                    (moveScores[i], moveScores[j]) = (moveScores[j], moveScores[i]);
+                }
+            }
+            var move = moveScores[i].Item1;
             board.MakeMove(move);
             var score = - Search( -beta, -alpha, depth - 1);
             board.UndoMove(move);
