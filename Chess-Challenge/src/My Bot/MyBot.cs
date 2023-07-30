@@ -6,55 +6,84 @@ using System.Linq;
 public class MyBot : IChessBot
 {
     class Option {
+        // board hash if the option becomes reality
+        ulong ZobristKey;
         public Move move;
         public double score;
-        Option[] options;
+        Option[] futures = new Option[0];
+
+        static double[] PieceValue = { 0, 1, 3, 3, 5, 9, 0};
+        static Random rnd = new Random();
+
+        public Option() { }
 
         public Option(Move move) {
             this.move = move;
         }
+
+        public Option GetFuture(Board board) {
+            try {
+                return futures.First(option => board.ZobristKey == option.ZobristKey);
+            } catch (InvalidOperationException e) {
+                return new Option();
+            }
+        }
+
+        public void LookAhead(Board board, int depth) {
+            // doesn't hurt to assign this repeatedly
+            ZobristKey = board.ZobristKey;
+
+            if (depth == 0) {
+                // done looking ahead, just evaluate this position
+                score = Evaluate(board);
+                return;
+            }
+
+            if (futures.Length == 0) {
+                var moves = board.GetLegalMoves();
+                if (moves.Length == 0) {
+                    score = Evaluate(board);
+                    return;
+                }
+                futures = moves.Select(move => new Option(move)).ToArray();
+            }
+
+            foreach (Option future in futures) {
+                board.MakeMove(future.move);
+                future.LookAhead(board, depth - 1);
+                board.UndoMove(future.move);
+            }
+            score = - futures.Select(o => o.score).Max();
+        }
+
+        public Option ChooseFuture() {
+            return futures.MaxBy(option => option.score);
+        }
+
+        // evaluate the board from our point of view when it is their move
+        double Evaluate(Board board) {
+            if (board.IsInCheckmate()) return 1000;
+
+            bool them = board.IsWhiteToMove, us = !them;
+            double score = rnd.NextDouble() - 0.5;
+            for(PieceType type = PieceType.Pawn; type < PieceType.King; type++) {
+                double balance = board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
+                score += PieceValue[(int)type] * balance;
+            }
+            return score;
+        }
     }
 
-    double[] PieceValue = { 0, 1, 3, 3, 5, 9, 0};
-    Random rnd = new Random();
+    // a single option that was chosen either by us or them
+    Option present = new Option();
 
     public Move Think(Board board, Timer timer)
     {
-        var ahead = LookAhead(board, 4);
-        return ahead.MaxBy(option => option.score).move;
-    }
-
-    Option[] LookAhead(Board board, int depth) {
-        var moves = board.GetLegalMoves();
-        var options = moves.Select(move => new Option(move)).ToArray();
-        foreach (Option option in options) {
-            board.MakeMove(option.move);
-            if (depth == 1) {
-                option.score = Evaluate(board);
-            } else {
-                var theirOptions = LookAhead(board, depth - 1);
-                if (theirOptions.Length > 0) {
-                    // score for us is the inverse of their best move
-                    option.score = - theirOptions.Select(o => o.score).Max();
-                } else {
-                    option.score = Evaluate(board);
-                }
-            }
-            board.UndoMove(option.move);
-        }
-        return options;
-    }
-
-    // evaluate the board from our point of view when it is their move
-    double Evaluate(Board board) {
-        if (board.IsInCheckmate()) return 1000;
-
-        bool them = board.IsWhiteToMove, us = !them;
-        double score = rnd.NextDouble() - 0.5;
-        for(PieceType type = PieceType.Pawn; type < PieceType.King; type++) {
-            double balance = board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
-            score += PieceValue[(int)type] * balance;
-        }
-        return score;
+        // build new or choose a foretold future
+        present = present.GetFuture(board);
+        present.LookAhead(board, 4);
+        // chose the best future
+        present = present.ChooseFuture();
+        return present.move;
     }
 }
