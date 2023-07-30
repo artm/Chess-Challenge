@@ -48,10 +48,10 @@ public class MyBot : IChessBot
                 futures = moves.Select(move => new Option(move)).ToArray();
             }
 
-            foreach (Option future in futures) {
-                board.MakeMove(future.move);
-                future.LookAhead(board, depth - 1);
-                board.UndoMove(future.move);
+            foreach (Option option in futures) {
+                board.MakeMove(option.move);
+                option.LookAhead(board, depth - 1);
+                board.UndoMove(option.move);
             }
             score = - futures.Select(o => o.score).Max();
         }
