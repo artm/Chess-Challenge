@@ -38,12 +38,9 @@ public class MyBot : IChessBot
         }
 
         public void LookAhead(Board board, Timer timer, int digTime) {
-            int plyCount = 0;
             while( digTime > timer.MillisecondsElapsedThisTurn ){
                 LookFurtherAhead(board, timer, digTime);
-                plyCount++;
             }
-            Log($"Dug around { plyCount } plys ahead");
         }
 
         void LookFurtherAhead(Board board, Timer timer, int digTime) {
@@ -68,7 +65,7 @@ public class MyBot : IChessBot
 
         // evaluate the board from our point of view when it is their move
         static double EvaluateBoard(Board board) {
-            if (board.IsInCheckmate()) return 1000;
+            if (board.IsInCheckmate()) return 100;
 
             bool them = board.IsWhiteToMove, us = !them;
             double score = rnd.NextDouble() - 0.5;
@@ -76,6 +73,9 @@ public class MyBot : IChessBot
                 double balance = board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
                 score += PieceValue[(int)type] * balance;
             }
+
+            if (board.IsDraw()) score -= 5;
+
             return score;
         }
 
@@ -97,7 +97,7 @@ public class MyBot : IChessBot
     {
         // build new or choose a foretold future
         present = present.GetFuture(board);
-        present.LookAhead(board, timer, 250);
+        present.LookAhead(board, timer, 750);
         present.Evaluate(board);
         // chose the best future
         present = present.ChooseFuture();
