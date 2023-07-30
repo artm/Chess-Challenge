@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using static ChessChallenge.Application.ConsoleHelper;
+
 namespace ChessChallenge.Example
 {
 
@@ -25,7 +27,11 @@ namespace ChessChallenge.Example
         public Move Think(Board board, Timer timer)
         {
             var ahead = SeeAhead(board, 4);
-            return ahead.MaxBy(option => option.score).move;
+            var move = ahead.MaxBy(option => option.score).move;
+            if (!board.GetLegalMoves().Contains(move)) {
+                Log($"EvilBot about to make an illegal {move}");
+            }
+            return move;
         }
 
         Option[] SeeAhead(Board board, int depth) {

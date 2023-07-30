@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using static ChessChallenge.Application.ConsoleHelper;
+
 public class MyBot : IChessBot
 {
     class Option {
@@ -81,9 +83,12 @@ public class MyBot : IChessBot
     {
         // build new or choose a foretold future
         present = present.GetFuture(board);
-        present.LookAhead(board, 4);
+        present.LookAhead(board, 3);
         // chose the best future
         present = present.ChooseFuture();
+        if (!board.GetLegalMoves().Contains(present.move)) {
+            Log($"MyBot about to make an illegal {present.move}");
+        }
         return present.move;
     }
 }
