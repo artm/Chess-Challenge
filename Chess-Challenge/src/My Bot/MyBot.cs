@@ -1,4 +1,4 @@
-using ChessChallenge.API;
+﻿using ChessChallenge.API;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,6 +13,8 @@ public class MyBot : IChessBot
             score = 0;
         }
     }
+
+    int[] PieceValue = { 0, 1, 3, 3, 5, 9, 0};
 
     public Move Think(Board board, Timer timer)
     {
@@ -33,6 +35,14 @@ public class MyBot : IChessBot
 
     // evaluate the board from point of view of whose move it is
     int Evaluate(Board board) {
-        return 0;
+        if (board.IsInCheckmate()) return -1000;
+
+        bool us = board.IsWhiteToMove, them = !us;
+        int score = 0;
+        for(PieceType type = PieceType.Pawn; type < PieceType.King; type++) {
+            int balance = board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
+            score += PieceValue[(int)type] * balance;
+        }
+        return score;
     }
 }
