@@ -28,9 +28,6 @@ namespace ChessChallenge.Example
         {
             var ahead = SeeAhead(board, 4);
             var move = ahead.MaxBy(option => option.score).move;
-            if (!board.GetLegalMoves().Contains(move)) {
-                Log($"EvilBot about to make an illegal {move}");
-            }
             return move;
         }
 
