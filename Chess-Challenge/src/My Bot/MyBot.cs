@@ -90,7 +90,7 @@ public class MyBot : IChessBot
                 option.Evaluate(board);
                 board.UndoMove(option.move);
             }
-            var worst = futures.OrderByDescending(o => o.Score).First();
+            var worst = futures.OrderByDescending(o => (o.Score, - o.Depth)).First();
             Score = - worst.Score;
             Depth = worst.Depth + 1;
         }
