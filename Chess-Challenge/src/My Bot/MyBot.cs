@@ -61,11 +61,10 @@ public class MyBot : IChessBot
         }
 
         public Option ChooseFuture() {
-            //return futures.MaxBy(option => option.Score);
             var maxScore = futures.Select(o => o.Score).Max();
             var bestOptions = futures.Where(o => o.Score == maxScore).ToArray();
-            Log(String.Format("Selecting from {0} options with score {1,6:F2}", bestOptions.Length, maxScore));
             var i = rnd.Next(0, bestOptions.Length);
+            Log(String.Format("{1,6:F1} @{2} from {0,2}x", bestOptions.Length, maxScore, bestOptions[i].Depth));
             return bestOptions[i];
         }
 
@@ -107,7 +106,6 @@ public class MyBot : IChessBot
         present.Evaluate(board);
         // chose the best future
         present = present.ChooseFuture();
-        Log(String.Format("Score: {0,6:F2} @ {1}", present.Score, present.Depth));
         return present.move;
     }
 }
