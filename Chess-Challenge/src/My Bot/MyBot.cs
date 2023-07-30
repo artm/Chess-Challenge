@@ -1,4 +1,5 @@
 ﻿using ChessChallenge.API;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,7 +9,7 @@ public class MyBot : IChessBot
 {
     class Option {
         public Move move;
-        public int score;
+        public double score;
 
         public Option(Move move) {
             this.move = move;
@@ -16,7 +17,8 @@ public class MyBot : IChessBot
         }
     }
 
-    int[] PieceValue = { 0, 1, 3, 3, 5, 9, 0};
+    double[] PieceValue = { 0, 1, 3, 3, 5, 9, 0};
+    Random rnd = new Random();
 
     public Move Think(Board board, Timer timer)
     {
@@ -46,13 +48,13 @@ public class MyBot : IChessBot
     }
 
     // evaluate the board from our point of view when it is their move
-    int Evaluate(Board board) {
+    double Evaluate(Board board) {
         if (board.IsInCheckmate()) return 1000;
 
         bool them = board.IsWhiteToMove, us = !them;
-        int score = 0;
+        double score = rnd.NextDouble() - 0.5;
         for(PieceType type = PieceType.Pawn; type < PieceType.King; type++) {
-            int balance = 2 * board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
+            double balance = 2 * board.GetPieceList(type, us).Count() - board.GetPieceList(type, them).Count();
             score += PieceValue[(int)type] * balance;
         }
         return score;
