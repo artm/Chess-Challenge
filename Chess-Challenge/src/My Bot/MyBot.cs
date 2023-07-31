@@ -74,7 +74,7 @@ public class MyBot : IChessBot
             depth++;
             foreach(var move in board.GetLegalMoves()) {
                 board.MakeMove(move);
-                var score = - Search(-Infinity, Infinity, depth);
+                var score = - Search(-Infinity, Infinity, depth, 0);
                 board.UndoMove(move);
                 if (score > bestScore) {
                     bestScore = score;
@@ -90,7 +90,7 @@ public class MyBot : IChessBot
         return bestMove;
     }
 
-    int Search(int alpha, int beta, int depth) {
+    int Search(int alpha, int beta, int depth, int fromRoot) {
         ref Transposition tr = ref tt[board.ZobristKey % TTSize];
         if ( tr.IsCutoff(board, depth, alpha, beta) )
             return tr.Score;
@@ -100,10 +100,9 @@ public class MyBot : IChessBot
 
         var bestScore = -Infinity-1;
         var bestMove = Move.NullMove;
-
-        ScoreType scoreType = ScoreType.UpperBound;
-
         var moves = board.GetLegalMoves();
+
+
         int[] mScores = new int[moves.Length];
         for(int i=0; i<moves.Length; i++) {
             var move = moves[i];
@@ -113,6 +112,7 @@ public class MyBot : IChessBot
                 0;
         }
 
+        ScoreType scoreType = ScoreType.UpperBound;
         for(int i=0; i<mScores.Length; i++) {
             var iMax = i;
             for(int j=i+1; j<mScores.Length; j++)
@@ -124,7 +124,7 @@ public class MyBot : IChessBot
 
             var move = moves[i];
             board.MakeMove(move);
-            var score = - Search( -beta, -alpha, depth - 1);
+            var score = - Search( -beta, -alpha, depth - 1, fromRoot + 1);
             board.UndoMove(move);
             if (score >= beta)
                 return tr.Store(board, move, depth, beta, ScoreType.LowerBound);
