@@ -45,10 +45,10 @@ public class MyBot : IChessBot
         this.timer = timer;
         this.board = board;
 
-        int score, depth;
-        for (score = 0, depth = 1; MayThink(); depth++)
-            score = -Search(-Infinity, Infinity, depth, 0);
-        Console.WriteLine("{0,10} @ {1} in {2}ms", score, depth,
+        int score = 0, depth;
+        for (depth = 1; MayThink(); depth++)
+            score = Search(-Infinity, Infinity, depth, 0);
+        Console.WriteLine("{0,10} @ {1} in {2}ms", score, depth - 1,
             timer.MillisecondsElapsedThisTurn
         );
 
@@ -85,7 +85,7 @@ public class MyBot : IChessBot
         var bestMove = Move.NullMove;
         var moves = board.GetLegalMoves();
         if (moves.Length == 0)
-            return board.IsInCheckmate() ? fromRoot - MateBaseScore : 0;
+            return board.IsInCheck() ? fromRoot - MateBaseScore : 0;
 
         int[] mScores = new int[moves.Length];
         for (int i = 0; i < moves.Length; i++) {
@@ -111,16 +111,16 @@ public class MyBot : IChessBot
             board.MakeMove(move);
             var score = -Search(-beta, -alpha, depth - 1, fromRoot + 1);
             board.UndoMove(move);
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+                if (fromRoot == 0) bestRootMove = bestMove;
+            }
             if (score >= beta)
                 return tr.Store(board, move, depth, beta, ScoreType.LowerBound);
             if (score > alpha) {
                 alpha = score;
                 scoreType = ScoreType.Exact;
-            }
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = move;
-                if (fromRoot == 0) bestRootMove = bestMove;
             }
         }
         return tr.Store(board, bestMove, depth, alpha, scoreType);
