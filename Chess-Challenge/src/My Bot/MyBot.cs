@@ -35,7 +35,7 @@ public class MyBot : IChessBot
     int MaxThinkTime = 700;
     const uint TTSize = 2^20;
     static int[] PieceValue = {0, 100, 300, 300, 500, 900, 10000 };
-    static int Infinity = 1000000000;
+    const int Infinity = 1000000000, MateBaseScore = 100000000;
 
     Timer timer;
     Board board;
@@ -49,7 +49,7 @@ public class MyBot : IChessBot
     }
 
     int Evaluate() {
-        if (board.IsInCheckmate()) return -Infinity;
+        if (board.IsInCheckmate()) return -MateBaseScore;
 
         bool us = board.IsWhiteToMove, them = !us;
         int Score = 0;
@@ -66,7 +66,7 @@ public class MyBot : IChessBot
     }
 
     Move SearchRoot() {
-        int bestScore = -Infinity-1;
+        int bestScore = -Infinity;
         Move bestMove = Move.NullMove;
 
         var depth = 1;
@@ -98,7 +98,7 @@ public class MyBot : IChessBot
         if (depth == 0 || !MayThink())
             return Evaluate();
 
-        var bestScore = -Infinity-1;
+        var bestScore = -Infinity;
         var bestMove = Move.NullMove;
         var moves = board.GetLegalMoves();
 
