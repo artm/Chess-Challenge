@@ -1,7 +1,5 @@
 ﻿using ChessChallenge.API;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 public class MyBot : IChessBot
 {
@@ -33,28 +31,38 @@ public class MyBot : IChessBot
     }
 
     int MaxThinkTime = 700;
-    const uint TTSize = 2^20;
-    static int[] PieceValue = {0, 100, 300, 300, 500, 900, 10000 };
+    const uint TTSize = 2 ^ 20;
+    static int[] PieceValue = { 0, 100, 300, 300, 500, 900, 10000 };
     const int Infinity = 1000000000, MateBaseScore = 100000000;
 
     Timer timer;
     Board board;
     Transposition[] tt = new Transposition[TTSize];
+    Move bestRootMove = Move.NullMove;
 
     public Move Think(Board board, Timer timer)
     {
         this.timer = timer;
         this.board = board;
-        return SearchRoot();
+
+        int score, depth;
+        for (score = 0, depth = 1; MayThink(); depth++)
+            score = -Search(-Infinity, Infinity, depth, 0);
+        Console.WriteLine("{0,10} @ {1} in {2}ms", score, depth,
+            timer.MillisecondsElapsedThisTurn
+        );
+
+        return bestRootMove;
     }
 
     int Evaluate() {
-        if (board.IsInCheckmate()) return -MateBaseScore;
 
         bool us = board.IsWhiteToMove, them = !us;
         int Score = 0;
-        for(PieceType type = PieceType.Pawn; type < PieceType.King; type++) {
-            int balance = board.GetPieceList(type, us).Count - board.GetPieceList(type, them).Count;
+        for (PieceType type = PieceType.Pawn; type < PieceType.King; type++) {
+            int balance =
+                board.GetPieceList(type, us).Count
+                - board.GetPieceList(type, them).Count;
             Score += PieceValue[(int)type] * balance;
         }
 
@@ -65,34 +73,9 @@ public class MyBot : IChessBot
         return timer.MillisecondsElapsedThisTurn < MaxThinkTime;
     }
 
-    Move SearchRoot() {
-        int bestScore = -Infinity;
-        Move bestMove = Move.NullMove;
-
-        var depth = 1;
-        while(MayThink()) {
-            depth++;
-            foreach(var move in board.GetLegalMoves()) {
-                board.MakeMove(move);
-                var score = - Search(-Infinity, Infinity, depth, 0);
-                board.UndoMove(move);
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMove = move;
-                }
-                if (!MayThink()) break;
-            }
-        }
-        Console.WriteLine(
-            "{0,10} @ {1} in {2}ms",
-            bestScore, depth, timer.MillisecondsElapsedThisTurn
-        );
-        return bestMove;
-    }
-
     int Search(int alpha, int beta, int depth, int fromRoot) {
         ref Transposition tr = ref tt[board.ZobristKey % TTSize];
-        if ( tr.IsCutoff(board, depth, alpha, beta) )
+        if (fromRoot > 0 && tr.IsCutoff(board, depth, alpha, beta))
             return tr.Score;
 
         if (depth == 0 || !MayThink())
@@ -101,21 +84,23 @@ public class MyBot : IChessBot
         var bestScore = -Infinity;
         var bestMove = Move.NullMove;
         var moves = board.GetLegalMoves();
-
+        if (moves.Length == 0)
+            return board.IsInCheckmate() ? fromRoot - MateBaseScore : 0;
 
         int[] mScores = new int[moves.Length];
-        for(int i=0; i<moves.Length; i++) {
+        for (int i = 0; i < moves.Length; i++) {
             var move = moves[i];
             mScores[i] =
                 move == tr.Move ? Infinity :
-                move.IsCapture ? (100 * (int)move.CapturePieceType - (int)move.MovePieceType) :
+                move.IsCapture ? (100 * (int)move.CapturePieceType
+                                  - (int)move.MovePieceType) :
                 0;
         }
 
         ScoreType scoreType = ScoreType.UpperBound;
-        for(int i=0; i<mScores.Length; i++) {
+        for (int i = 0; i < mScores.Length; i++) {
             var iMax = i;
-            for(int j=i+1; j<mScores.Length; j++)
+            for (int j = i + 1; j < mScores.Length; j++)
                 if (mScores[iMax] < mScores[j]) iMax = j;
             if (iMax != i) {
                 (mScores[i], mScores[iMax]) = (mScores[iMax], mScores[i]);
@@ -124,7 +109,7 @@ public class MyBot : IChessBot
 
             var move = moves[i];
             board.MakeMove(move);
-            var score = - Search( -beta, -alpha, depth - 1, fromRoot + 1);
+            var score = -Search(-beta, -alpha, depth - 1, fromRoot + 1);
             board.UndoMove(move);
             if (score >= beta)
                 return tr.Store(board, move, depth, beta, ScoreType.LowerBound);
@@ -135,6 +120,7 @@ public class MyBot : IChessBot
             if (score > bestScore) {
                 bestScore = score;
                 bestMove = move;
+                if (fromRoot == 0) bestRootMove = bestMove;
             }
         }
         return tr.Store(board, bestMove, depth, alpha, scoreType);
