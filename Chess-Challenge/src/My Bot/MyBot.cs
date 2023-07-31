@@ -103,19 +103,26 @@ public class MyBot : IChessBot
 
         ScoreType scoreType = ScoreType.UpperBound;
 
-        var trMove = tr.Move;
-        var moveScores = board.GetLegalMoves().Select(move => (move,
-            move == trMove ? Infinity :
-            move.IsCapture ? (100 * (int)move.CapturePieceType - (int)move.MovePieceType) :
-            0
-        )).ToArray();
-        for(int i=0; i<moveScores.Length; i++) {
-            for(int j=i+1; j<moveScores.Length; j++) {
-                if (moveScores[i].Item2 < moveScores[j].Item2) {
-                    (moveScores[i], moveScores[j]) = (moveScores[j], moveScores[i]);
-                }
+        var moves = board.GetLegalMoves();
+        int[] mScores = new int[moves.Length];
+        for(int i=0; i<moves.Length; i++) {
+            var move = moves[i];
+            mScores[i] =
+                move == tr.Move ? Infinity :
+                move.IsCapture ? (100 * (int)move.CapturePieceType - (int)move.MovePieceType) :
+                0;
+        }
+
+        for(int i=0; i<mScores.Length; i++) {
+            var iMax = i;
+            for(int j=i+1; j<mScores.Length; j++)
+                if (mScores[iMax] < mScores[j]) iMax = j;
+            if (iMax != i) {
+                (mScores[i], mScores[iMax]) = (mScores[iMax], mScores[i]);
+                (moves[i], moves[iMax]) = (moves[iMax], moves[i]);
             }
-            var move = moveScores[i].Item1;
+
+            var move = moves[i];
             board.MakeMove(move);
             var score = - Search( -beta, -alpha, depth - 1);
             board.UndoMove(move);
