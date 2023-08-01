@@ -23,6 +23,8 @@ public class MyBot : IChessBot
         }
     }
 
+    class OutOfTime : System.Exception {}
+
     Board board;
     Timer timer;
     Move bestRootMove;
@@ -34,7 +36,13 @@ public class MyBot : IChessBot
     {
         this.board = board;
         this.timer = timer;
-        for(int depth=1; MayThink(); depth++) Search(depth);
+        for(int depth=1; MayThink(); depth++) {
+            try {
+                Search(depth);
+            } catch (OutOfTime) {
+                // it's ok, we'll have the best move from the previous iteration
+            }
+        }
         return bestRootMove;
     }
 
@@ -60,12 +68,8 @@ public class MyBot : IChessBot
         var moves = board.GetLegalMoves(quiescence);
         int[] moveScores = ScoreMoves(moves, tr.Move);
         Move bestMove = Move.NullMove;
-        bool finished = true;
         for(int i=0; i<moves.Length; i++) {
-            if (!MayThink()) {
-                finished = false;
-                break;
-            }
+            if (!MayThink()) throw new OutOfTime();
             var move = FindNextMove(moves, moveScores, i);
             board.MakeMove(move);
             int score = - Search(depth - 1, dFromRoot + 1, - beta, - alpha);
@@ -73,8 +77,8 @@ public class MyBot : IChessBot
             if (score > alpha) {
                 alpha = score;
                 bestMove = move;
+                if (alpha >= beta) break;
             }
-            if (alpha >= beta) break;
         }
         tr.Key = board.ZobristKey;
         tr.Move = bestMove;
@@ -84,8 +88,7 @@ public class MyBot : IChessBot
             BoundType.Exact;
         tr.Score = alpha;
         tr.Depth = depth;
-        if (dFromRoot == 0 && finished)
-            bestRootMove = bestMove;
+        if (dFromRoot == 0) bestRootMove = bestMove;
         return alpha;
     }
 
