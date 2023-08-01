@@ -100,6 +100,7 @@ public class MyBot : IChessBot
                 board.GetPieceList(pt, board.IsWhiteToMove).Count -
                 board.GetPieceList(pt, !board.IsWhiteToMove).Count);
         }
+        score += board.GetLegalMoves().Length + board.GetLegalMoves(true).Length;
         return score;
     }
 
