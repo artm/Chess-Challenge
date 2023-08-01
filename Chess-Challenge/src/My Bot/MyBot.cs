@@ -26,7 +26,7 @@ public class MyBot : IChessBot
             return Evaluate();
 
         var moves = board.GetLegalMoves();
-        int[] moveScores = MoveScores(moves);
+        int[] moveScores = ScoreMoves(moves);
         Move bestMove = Move.NullMove;
         bool finished = true;
         for(int i=0; i<moves.Length; i++) {
@@ -60,7 +60,7 @@ public class MyBot : IChessBot
         return score;
     }
 
-    int[] MoveScores(Move[] moves)
+    int[] ScoreMoves(Move[] moves)
     {
         var scores = new int[moves.Length];
         for(int i=0; i<moves.Length; i++) {
