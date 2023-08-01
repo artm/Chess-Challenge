@@ -41,10 +41,10 @@ public class MyBot : IChessBot
     int Search(int depth, int dFromRoot = 0, int alpha = -Inf, int beta = Inf)
     {
         bool quiescence = depth <= 0;
-        ref Position tr = ref Transpositions[ board.ZobristKey % TTSize ];
-
         if (board.IsInCheckmate())
             return dFromRoot - WinScore;
+        else if (board.IsInStalemate())
+            return 0;
         else if (quiescence) {
             var score = Evaluate();
             if (score >= beta)
@@ -52,6 +52,7 @@ public class MyBot : IChessBot
             alpha = score;
         }
 
+        ref Position tr = ref Transpositions[ board.ZobristKey % TTSize ];
         if (dFromRoot > 0 && tr.IsCutoff(board, depth, alpha, beta)) {
             return tr.Score;
         }
