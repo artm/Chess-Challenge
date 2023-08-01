@@ -57,7 +57,7 @@ public class MyBot : IChessBot
         }
 
         var moves = board.GetLegalMoves(quiescence);
-        int[] moveScores = ScoreMoves(moves);
+        int[] moveScores = ScoreMoves(moves, tr.Move);
         Move bestMove = Move.NullMove;
         bool finished = true;
         for(int i=0; i<moves.Length; i++) {
@@ -99,11 +99,13 @@ public class MyBot : IChessBot
         return score;
     }
 
-    int[] ScoreMoves(Move[] moves)
+    int[] ScoreMoves(Move[] moves, Move bestMove)
     {
         var scores = new int[moves.Length];
         for(int i=0; i<moves.Length; i++) {
-            if (moves[i].IsCapture)
+            if (moves[i] == bestMove)
+                scores[i] = Inf;
+            else if (moves[i].IsCapture)
                 scores[i] = 100 * (int)moves[i].CapturePieceType - (int)moves[i].MovePieceType;
         }
         return scores;
