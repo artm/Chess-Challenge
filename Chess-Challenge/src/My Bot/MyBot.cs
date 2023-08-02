@@ -103,6 +103,12 @@ public class MyBot : IChessBot
                 board.GetPieceList(pt, !board.IsWhiteToMove).Count);
         }
         score += board.GetLegalMoves().Length + board.GetLegalMoves(true).Length;
+        if (board.TrySkipTurn()){
+            // their mobility/threats will only be deducted when we're not in
+            // check, but when we are our mobility is mostly decreased anyway
+            score -= board.GetLegalMoves().Length + board.GetLegalMoves(true).Length;
+            board.UndoSkipTurn();
+        }
         return score;
     }
 
