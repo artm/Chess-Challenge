@@ -1,4 +1,4 @@
-using ChessChallenge.API;
+﻿using ChessChallenge.API;
 using System;
 using System.Linq;
 
@@ -51,7 +51,7 @@ public class MyBot : IChessBot
         bool quiescence = depth <= 0;
         if (board.IsInCheckmate())
             return dFromRoot - WinScore;
-        else if (board.IsInStalemate() || board.IsRepeatedPosition())
+        else if (board.IsInStalemate())
             return 0;
         else if (quiescence) {
             var score = Evaluate();
@@ -73,6 +73,8 @@ public class MyBot : IChessBot
             var move = FindNextMove(moves, moveScores, i);
             board.MakeMove(move);
             int score = - Search(depth - 1, dFromRoot + 1, - beta, - alpha);
+            if (board.IsRepeatedPosition())
+                score -= 500;
             board.UndoMove(move);
             if (score > alpha) {
                 alpha = score;
