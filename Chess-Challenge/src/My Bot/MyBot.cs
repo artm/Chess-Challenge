@@ -4,11 +4,31 @@ using System.Linq;
 
 public class MyBot : IChessBot
 {
+    enum BoundType { Lower = -1, Exact, Upper }
+
+    struct Position {
+        public ulong Key;
+        public Move Move;
+        public BoundType Bound;
+        public int Score;
+        public int Depth;
+
+        public bool IsCutoff(Board board, int depth, int alpha, int beta) {
+            return
+                Key == board.ZobristKey && Depth >= depth && (
+                    Bound == BoundType.Exact
+                    || Bound == BoundType.Lower && Score >= beta
+                    || Bound == BoundType.Upper && Score <= alpha
+                );
+        }
+    }
+
     Board board;
     Timer timer;
     Move bestRootMove;
-    const int WinScore = 100000, Inf = 1000000;
+    const int WinScore = 100000, Inf = 1000000, TTSize = 2^20;
     int[] PieceValue = { 0, 100, 300, 300, 400, 500, 10000 };
+    Position[] Transpositions = new Position[TTSize];
 
     public Move Think(Board board, Timer timer)
     {
@@ -21,6 +41,7 @@ public class MyBot : IChessBot
     int Search(int depth, int dFromRoot = 0, int alpha = -Inf, int beta = Inf)
     {
         bool quiescence = depth <= 0;
+        ref Position tr = ref Transpositions[ board.ZobristKey % TTSize ];
 
         if (board.IsInCheckmate())
             return dFromRoot - WinScore;
@@ -30,6 +51,11 @@ public class MyBot : IChessBot
                 return score;
             alpha = score;
         }
+
+        if (dFromRoot > 0 && tr.IsCutoff(board, depth, alpha, beta)) {
+            return tr.Score;
+        }
+
         var moves = board.GetLegalMoves(quiescence);
         int[] moveScores = ScoreMoves(moves);
         Move bestMove = Move.NullMove;
@@ -49,6 +75,14 @@ public class MyBot : IChessBot
             }
             if (alpha >= beta) break;
         }
+        tr.Key = board.ZobristKey;
+        tr.Move = bestMove;
+        tr.Bound =
+            alpha >= beta ? BoundType.Lower :
+            bestMove.IsNull ? BoundType.Upper :
+            BoundType.Exact;
+        tr.Score = alpha;
+        tr.Depth = depth;
         if (dFromRoot == 0 && finished)
             bestRootMove = bestMove;
         return alpha;
@@ -87,4 +121,5 @@ public class MyBot : IChessBot
     {
         return timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 60;
     }
+
 }
