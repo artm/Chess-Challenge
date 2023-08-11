@@ -6,7 +6,7 @@ namespace ChessChallenge.Example
     public class StockfishBot : IChessBot
     {
         private bool started = false;
-        private static readonly int thinkTimeFraction = 120, skillLevel = 0;
+        private static readonly int thinkTimeFraction = 120, skillLevel = 2;
         private static Process engineProcess;
         private static Board currentBoard;
         private static Move? bestMove;
