@@ -19,7 +19,7 @@ public class MyBot : IChessBot
     const int TTSize = 2^20;
     int[] PieceValue = { 0, 100, 300, 300, 500, 900, 10000 };
     Position[] Transpositions = new Position[TTSize];
-    int timeBudget;
+    int timeBudget, selDepth;
 
     public Move Think(Board board, Timer timer)
     {
@@ -30,11 +30,12 @@ public class MyBot : IChessBot
         int spentTimeBudget = 0, lastIterationTime = 0; // #DEBUG
         for(int depth = 1; MayThink(); depth++)
             try {
+                selDepth = 0;
                 var score = // #DEBUG
                 Search(depth, 0, -1000000, 1000000);
                 lastIterationTime = timer.MillisecondsElapsedThisTurn - spentTimeBudget; // #DEBUG
                 spentTimeBudget += lastIterationTime; // #DEBUG
-                Console.WriteLine( $"[us] depth {depth} score {score} time {lastIterationTime} {bestRootMove}" ); // #DEBUG
+                Console.WriteLine( $"[us] depth {depth} selDepth {selDepth} score {score} time {lastIterationTime} {bestRootMove}" ); // #DEBUG
             } catch (OutOfTime) {
                 // it's ok, we'll have the best move from the previous iteration
             }
@@ -43,6 +44,8 @@ public class MyBot : IChessBot
 
     int Search(int depth, int dFromRoot, int alpha, int beta, int maxExt = 5)
     {
+        selDepth = Math.Max(selDepth, dFromRoot);
+
         if (board.IsInCheckmate())
             return dFromRoot - 100000;
         else if (board.IsInStalemate())
