@@ -399,3 +399,5 @@ FodyWeavers.xsd
 
 # VS Code
 .vscode/
+
+stockfish.exe
