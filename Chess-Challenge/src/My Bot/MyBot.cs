@@ -1,4 +1,4 @@
-﻿using ChessChallenge.API;
+using ChessChallenge.API;
 using System;
 using System.Linq;
 
@@ -29,7 +29,7 @@ public class MyBot : IChessBot
     Timer timer;
     Move bestRootMove;
     const int WinScore = 100000, Inf = 1000000, TTSize = 2^20;
-    int[] PieceValue = { 0, 100, 300, 300, 400, 500, 10000 };
+    int[] PieceValue = { 0, 100, 300, 300, 500, 900, 10000 };
     Position[] Transpositions = new Position[TTSize];
 
     public Move Think(Board board, Timer timer)
