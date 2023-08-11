@@ -36,6 +36,7 @@ public class MyBot : IChessBot
     {
         this.board = board;
         this.timer = timer;
+        bestRootMove = Move.NullMove;
         for(int depth=1; MayThink(); depth++) {
             try {
                 Search(depth);
@@ -134,7 +135,7 @@ public class MyBot : IChessBot
 
     bool MayThink()
     {
-        return timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 60;
+        return bestRootMove.IsNull || timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 60;
     }
 
 }
