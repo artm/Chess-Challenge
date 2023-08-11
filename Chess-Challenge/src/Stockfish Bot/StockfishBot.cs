@@ -6,7 +6,7 @@ namespace ChessChallenge.Example
     public class StockfishBot : IChessBot
     {
         private bool started = false;
-        private static readonly int timeBudget = 200; 
+        private static readonly int thinkTimeFraction = 120, skillLevel = 0;
         private static Process engineProcess;
         private static Board currentBoard;
         private static Move? bestMove;
@@ -36,6 +36,7 @@ namespace ChessChallenge.Example
             engineProcess.BeginErrorReadLine();
             engineProcess.BeginOutputReadLine();
 
+            engineSendLine($"setoption name Skill Level value {skillLevel}");
             engineSendLine("uci");
             engineSendLine("isready");
         }
@@ -76,6 +77,7 @@ namespace ChessChallenge.Example
             var boardState = board.GetFenString();
 
             engineSendLine("position fen " + boardState);
+            var timeBudget = timer.MillisecondsRemaining / thinkTimeFraction;
             engineSendLine("go movetime " + timeBudget);
 
             System.Threading.Thread.Sleep(timeBudget);
