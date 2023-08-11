@@ -20,12 +20,17 @@ public class MyBot : IChessBot
 
     int Search(int depth, int dFromRoot = 0, int alpha = -Inf, int beta = Inf)
     {
+        bool quiescence = depth <= 0;
+
         if (board.IsInCheckmate())
             return dFromRoot - WinScore;
-        else if (depth <= 0)
-            return Evaluate();
-
-        var moves = board.GetLegalMoves();
+        else if (quiescence) {
+            var score = Evaluate();
+            if (score >= beta)
+                return score;
+            alpha = score;
+        }
+        var moves = board.GetLegalMoves(quiescence);
         int[] moveScores = ScoreMoves(moves);
         Move bestMove = Move.NullMove;
         bool finished = true;
