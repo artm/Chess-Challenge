@@ -45,7 +45,7 @@ public class MyBot : IChessBot
         else if (quiescence) {
             var score = Evaluate();
             if (score >= beta) return score;
-            alpha = score;
+            if (score > alpha) alpha = score;
         }
 
         ref Position tr = ref Transpositions[ board.ZobristKey % TTSize ];
