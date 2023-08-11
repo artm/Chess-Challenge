@@ -14,8 +14,7 @@ public class MyBot : IChessBot
     {
         this.board = board;
         this.timer = timer;
-        //for(int depth=1; MayThink(); depth++) Search(depth);
-        var score = Search(4);
+        for(int depth=1; MayThink(); depth++) Search(depth);
         return bestRootMove;
     }
 
@@ -28,17 +27,25 @@ public class MyBot : IChessBot
 
         var moves = board.GetLegalMoves();
         int[] moveScores = MoveScores(moves);
+        Move bestMove = Move.NullMove;
+        bool finished = true;
         for(int i=0; i<moves.Length; i++) {
+            if (!MayThink()) {
+                finished = false;
+                break;
+            }
             var move = FindNextMove(moves, moveScores, i);
             board.MakeMove(move);
             int score = - Search(depth - 1, dFromRoot + 1, - beta, - alpha);
             board.UndoMove(move);
             if (score > alpha) {
                 alpha = score;
-                if (dFromRoot == 0) bestRootMove = move;
+                bestMove = move;
             }
             if (alpha >= beta) break;
         }
+        if (dFromRoot == 0 && finished)
+            bestRootMove = bestMove;
         return alpha;
     }
 
