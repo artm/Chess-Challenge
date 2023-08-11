@@ -19,20 +19,27 @@ public class MyBot : IChessBot
     const int TTSize = 2^20;
     int[] PieceValue = { 0, 100, 300, 300, 500, 900, 10000 };
     Position[] Transpositions = new Position[TTSize];
+    int timeBudget;
 
     public Move Think(Board board, Timer timer)
     {
         this.board = board;
         this.timer = timer;
         bestRootMove = Move.NullMove;
-        int depth = 1, score = 0;
+        timeBudget = timer.MillisecondsRemaining / 30;
+        int depth = 1, score = 0, spentTimeBudget = 0, lastIterationTime = 0;
         for(; MayThink(); depth++)
             try {
                 score = Search(depth, 0, -1000000, 1000000);
+                lastIterationTime = timer.MillisecondsElapsedThisTurn - spentTimeBudget;
+                spentTimeBudget += lastIterationTime;
+                Console.WriteLine(
+                    $"[us] depth {depth} score {score} time {lastIterationTime} {bestRootMove}"
+                );
             } catch (OutOfTime) {
                 // it's ok, we'll have the best move from the previous iteration
             }
-        Console.WriteLine($"{score,10} @ {Math.Max(1, depth-2)} in {timer.MillisecondsElapsedThisTurn} ms");
+        //Console.WriteLine($"{score,10} @ {Math.Max(1, depth-2)} in {timer.MillisecondsElapsedThisTurn} ms");
         return bestRootMove;
     }
 
@@ -121,8 +128,7 @@ public class MyBot : IChessBot
 
     bool MayThink()
     {
-        return
-            bestRootMove.IsNull
-            || timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 60;
+        return bestRootMove.IsNull
+            || timer.MillisecondsElapsedThisTurn < timeBudget;
     }
 }
