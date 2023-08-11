@@ -8,9 +8,7 @@ public class MyBot : IChessBot
         public ulong Key;
         public Move Move;
         // -1 = lower, 0 = exact, 1 = upper
-        public int BoundType;
-        public int Score;
-        public int Depth;
+        public int BoundType, Score, Depth;
     }
 
     class OutOfTime : System.Exception {}
@@ -18,7 +16,7 @@ public class MyBot : IChessBot
     Board board;
     Timer timer;
     Move bestRootMove;
-    const int WinScore = 100000, Inf = 1000000, TTSize = 2^20;
+    const int TTSize = 2^20;
     int[] PieceValue = { 0, 100, 300, 300, 500, 900, 10000 };
     Position[] Transpositions = new Position[TTSize];
 
@@ -27,27 +25,26 @@ public class MyBot : IChessBot
         this.board = board;
         this.timer = timer;
         bestRootMove = Move.NullMove;
-        for(int depth=1; MayThink(); depth++) {
+        for(int depth=1; MayThink(); depth++)
             try {
                 Search(depth);
             } catch (OutOfTime) {
                 // it's ok, we'll have the best move from the previous iteration
             }
-        }
         return bestRootMove;
     }
 
-    int Search(int depth, int dFromRoot = 0, int alpha = -Inf, int beta = Inf)
+    int Search(int depth, int dFromRoot = 0, int alpha = -1000000, int beta = 1000000)
     {
         bool quiescence = depth <= 0;
+
         if (board.IsInCheckmate())
-            return dFromRoot - WinScore;
+            return dFromRoot - 100000;
         else if (board.IsInStalemate())
             return 0;
         else if (quiescence) {
             var score = Evaluate();
-            if (score >= beta)
-                return score;
+            if (score >= beta) return score;
             alpha = score;
         }
 
@@ -65,7 +62,7 @@ public class MyBot : IChessBot
         var scores = new int[moves.Length];
         for(int i=0; i<moves.Length; i++) {
             if (moves[i] == tr.Move)
-                scores[i] = Inf;
+                scores[i] = 1000000;
             else if (moves[i].IsCapture)
                 scores[i] = 100 * (int)moves[i].CapturePieceType - (int)moves[i].MovePieceType;
         }
@@ -103,13 +100,12 @@ public class MyBot : IChessBot
     int Evaluate()
     {
         int score = 0;
-        for(PieceType pt=PieceType.Pawn; pt<PieceType.King; pt++) {
+        for(PieceType pt=PieceType.Pawn; pt<PieceType.King; pt++)
             score += PieceValue[(int)pt] * (
                 board.GetPieceList(pt, board.IsWhiteToMove).Count -
                 board.GetPieceList(pt, !board.IsWhiteToMove).Count);
-        }
         score += board.GetLegalMoves().Length + board.GetLegalMoves(true).Length;
-        if (board.TrySkipTurn()){
+        if (board.TrySkipTurn()) {
             // their mobility/threats will only be deducted when we're not in
             // check, but when we are our mobility is mostly decreased anyway
             score -= board.GetLegalMoves().Length + board.GetLegalMoves(true).Length;
@@ -120,7 +116,8 @@ public class MyBot : IChessBot
 
     bool MayThink()
     {
-        return bestRootMove.IsNull || timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 60;
+        return
+            bestRootMove.IsNull
+            || timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 60;
     }
-
 }
