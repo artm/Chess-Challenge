@@ -28,14 +28,22 @@ public class MyBot : IChessBot
         bestRootMove = Move.NullMove;
         timeBudget = timer.MillisecondsRemaining / 30;
         int spentTimeBudget = 0, lastIterationTime = 0; // #DEBUG
-        for(int depth = 1; MayThink(); depth++)
+        int alpha = -1000000, beta = 1000000;
+        for(int depth = 1; MayThink();)
             try {
                 selDepth = 0;
-                var score = // #DEBUG
-                Search(depth, 0, -1000000, 1000000);
+                var score = Search(depth, 0, alpha, beta);
+                if (score <= alpha || score >= beta) {
+                    alpha = -1000000;
+                    beta = 1000000;
+                    continue;
+                }
+                alpha = score - 50;
+                beta = score + 50;
                 lastIterationTime = timer.MillisecondsElapsedThisTurn - spentTimeBudget; // #DEBUG
                 spentTimeBudget += lastIterationTime; // #DEBUG
                 Console.WriteLine( $"[us] depth {depth} selDepth {selDepth} score {score} time {lastIterationTime} {bestRootMove}" ); // #DEBUG
+                depth++;
             } catch (OutOfTime) {
                 // it's ok, we'll have the best move from the previous iteration
             }
