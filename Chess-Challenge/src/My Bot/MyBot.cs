@@ -27,14 +27,14 @@ public class MyBot : IChessBot
         bestRootMove = Move.NullMove;
         for(int depth=1; MayThink(); depth++)
             try {
-                Search(depth);
+                Search(depth, 0, -1000000, 1000000);
             } catch (OutOfTime) {
                 // it's ok, we'll have the best move from the previous iteration
             }
         return bestRootMove;
     }
 
-    int Search(int depth, int dFromRoot = 0, int alpha = -1000000, int beta = 1000000)
+    int Search(int depth, int dFromRoot, int alpha, int beta)
     {
         bool quiescence = depth <= 0;
 
