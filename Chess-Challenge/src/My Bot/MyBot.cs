@@ -51,7 +51,7 @@ public class MyBot : IChessBot
         bool quiescence = depth <= 0;
         if (board.IsInCheckmate())
             return dFromRoot - WinScore;
-        else if (board.IsInStalemate())
+        else if (board.IsInStalemate() || board.IsRepeatedPosition())
             return 0;
         else if (quiescence) {
             var score = Evaluate();
