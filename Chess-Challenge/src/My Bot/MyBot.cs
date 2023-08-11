@@ -4,23 +4,13 @@ using System.Linq;
 
 public class MyBot : IChessBot
 {
-    enum BoundType { Lower = -1, Exact, Upper }
-
     struct Position {
         public ulong Key;
         public Move Move;
-        public BoundType Bound;
+        // -1 = lower, 0 = exact, 1 = upper
+        public int BoundType;
         public int Score;
         public int Depth;
-
-        public bool IsCutoff(Board board, int depth, int alpha, int beta) {
-            return
-                Key == board.ZobristKey && Depth >= depth && (
-                    Bound == BoundType.Exact
-                    || Bound == BoundType.Lower && Score >= beta
-                    || Bound == BoundType.Upper && Score <= alpha
-                );
-        }
     }
 
     class OutOfTime : System.Exception {}
@@ -62,7 +52,12 @@ public class MyBot : IChessBot
         }
 
         ref Position tr = ref Transpositions[ board.ZobristKey % TTSize ];
-        if (dFromRoot > 0 && tr.IsCutoff(board, depth, alpha, beta)) {
+        if (dFromRoot > 0
+            && tr.Key == board.ZobristKey
+            && tr.Depth >= depth
+            && (tr.BoundType == 0
+                || tr.BoundType < 0 && tr.Score >= beta
+                || tr.BoundType > 0 && tr.Score <= alpha)) {
             return tr.Score;
         }
 
@@ -85,10 +80,9 @@ public class MyBot : IChessBot
         }
         tr.Key = board.ZobristKey;
         tr.Move = bestMove;
-        tr.Bound =
-            alpha >= beta ? BoundType.Lower :
-            bestMove.IsNull ? BoundType.Upper :
-            BoundType.Exact;
+        tr.BoundType =
+            alpha >= beta ? -1 :
+            bestMove.IsNull ? 1 : 0;
         tr.Score = alpha;
         tr.Depth = depth;
         if (dFromRoot == 0) bestRootMove = bestMove;
