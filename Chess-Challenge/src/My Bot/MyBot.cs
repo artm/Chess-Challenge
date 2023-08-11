@@ -1,4 +1,4 @@
-﻿using ChessChallenge.API;
+using ChessChallenge.API;
 using System;
 using System.Linq;
 
@@ -25,12 +25,14 @@ public class MyBot : IChessBot
         this.board = board;
         this.timer = timer;
         bestRootMove = Move.NullMove;
-        for(int depth=1; MayThink(); depth++)
+        int depth = 1, score = 0;
+        for(; MayThink(); depth++)
             try {
-                Search(depth, 0, -1000000, 1000000);
+                score = Search(depth, 0, -1000000, 1000000);
             } catch (OutOfTime) {
                 // it's ok, we'll have the best move from the previous iteration
             }
+        Console.WriteLine($"{score,10} @ {Math.Max(1, depth-2)} in {timer.MillisecondsElapsedThisTurn} ms");
         return bestRootMove;
     }
 
