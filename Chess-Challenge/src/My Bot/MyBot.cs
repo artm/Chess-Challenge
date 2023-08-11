@@ -1,4 +1,4 @@
-using ChessChallenge.API;
+﻿using ChessChallenge.API;
 using System;
 using System.Linq;
 
@@ -36,15 +36,19 @@ public class MyBot : IChessBot
         return bestRootMove;
     }
 
-    int Search(int depth, int dFromRoot, int alpha, int beta)
+    int Search(int depth, int dFromRoot, int alpha, int beta, int maxExt = 5)
     {
-        bool quiescence = depth <= 0;
-
         if (board.IsInCheckmate())
             return dFromRoot - 100000;
         else if (board.IsInStalemate())
             return 0;
-        else if (quiescence) {
+        else if (maxExt > 0 && board.IsInCheck()) {
+            maxExt--;
+            depth++;
+        }
+
+        bool quiescence = depth <= 0;
+        if (quiescence) {
             var score = Evaluate();
             if (score >= beta) return score;
             if (score > alpha) alpha = score;
@@ -76,11 +80,10 @@ public class MyBot : IChessBot
             (scores[i], scores[iMax]) = (scores[iMax], scores[i]);
             (moves[i], moves[iMax]) = (moves[iMax], moves[i]);
             var move = moves[i];
+            int score;
 
             board.MakeMove(move);
-            int score = - Search(depth - 1, dFromRoot + 1, - beta, - alpha);
-            if (board.IsRepeatedPosition())
-                score -= 500;
+            score = board.IsRepeatedPosition() ? 0 : - Search(depth - 1, dFromRoot + 1, - beta, - alpha, maxExt);
             board.UndoMove(move);
             if (score > alpha) {
                 alpha = score;
