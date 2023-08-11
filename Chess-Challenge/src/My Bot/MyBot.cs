@@ -62,11 +62,22 @@ public class MyBot : IChessBot
         }
 
         var moves = board.GetLegalMoves(quiescence);
-        int[] moveScores = ScoreMoves(moves, tr.Move);
+        var scores = new int[moves.Length];
+        for(int i=0; i<moves.Length; i++) {
+            if (moves[i] == tr.Move)
+                scores[i] = Inf;
+            else if (moves[i].IsCapture)
+                scores[i] = 100 * (int)moves[i].CapturePieceType - (int)moves[i].MovePieceType;
+        }
+
         Move bestMove = Move.NullMove;
         for(int i=0; i<moves.Length; i++) {
             if (!MayThink()) throw new OutOfTime();
-            var move = FindNextMove(moves, moveScores, i);
+            var (_, iMax) = scores.Select((score, i) => (score, i)).Skip(i).Max();
+            (scores[i], scores[iMax]) = (scores[iMax], scores[i]);
+            (moves[i], moves[iMax]) = (moves[iMax], moves[i]);
+            var move = moves[i];
+
             board.MakeMove(move);
             int score = - Search(depth - 1, dFromRoot + 1, - beta, - alpha);
             if (board.IsRepeatedPosition())
@@ -105,26 +116,6 @@ public class MyBot : IChessBot
             board.UndoSkipTurn();
         }
         return score;
-    }
-
-    int[] ScoreMoves(Move[] moves, Move bestMove)
-    {
-        var scores = new int[moves.Length];
-        for(int i=0; i<moves.Length; i++) {
-            if (moves[i] == bestMove)
-                scores[i] = Inf;
-            else if (moves[i].IsCapture)
-                scores[i] = 100 * (int)moves[i].CapturePieceType - (int)moves[i].MovePieceType;
-        }
-        return scores;
-    }
-
-    Move FindNextMove(Move[] moves, int[] scores, int i)
-    {
-        var (_, iMax) = scores.Select((score, i) => (score, i)).Skip(i).Max();
-        (scores[i], scores[iMax]) = (scores[iMax], scores[i]);
-        (moves[i], moves[iMax]) = (moves[iMax], moves[i]);
-        return moves[i];
     }
 
     bool MayThink()
