@@ -59,7 +59,7 @@ public class MyBot : IChessBot
             return dFromRoot - 100000;
         else if (board.IsInStalemate())
             return 0;
-        else if (maxExt > 0 && board.IsInCheck()) {
+        else if (depth == 0 && maxExt > 0 && board.IsInCheck()) {
             maxExt--;
             depth++;
         }
