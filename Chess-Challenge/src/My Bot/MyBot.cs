@@ -36,16 +36,17 @@ public class MyBot : IChessBot
                 if (score <= alpha || score >= beta) {
                     alpha = -1000000;
                     beta = 1000000;
+                    Console.WriteLine("[us] retry");
                     continue;
                 }
                 alpha = score - 50;
                 beta = score + 50;
                 lastIterationTime = timer.MillisecondsElapsedThisTurn - spentTimeBudget; // #DEBUG
                 spentTimeBudget += lastIterationTime; // #DEBUG
-                Console.WriteLine( $"[us] depth {depth} selDepth {selDepth} score {score} time {lastIterationTime} {bestRootMove}" ); // #DEBUG
+                Console.WriteLine($"[us] depth {depth} selDepth {selDepth,2} score {score,-10} time {lastIterationTime,5} {bestRootMove}" ); // #DEBUG
                 depth++;
             } catch (OutOfTime) {
-                // it's ok, we'll have the best move from the previous iteration
+                // it's ok, we've got the best move from the previous iteration
             }
         return bestRootMove;
     }
