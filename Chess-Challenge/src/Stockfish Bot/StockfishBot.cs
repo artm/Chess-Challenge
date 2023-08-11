@@ -1,4 +1,5 @@
 ﻿using ChessChallenge.API;
+using System;
 using System.Diagnostics;
 
 namespace ChessChallenge.Example
@@ -6,7 +7,7 @@ namespace ChessChallenge.Example
     public class StockfishBot : IChessBot
     {
         private bool started = false;
-        private static readonly int thinkTimeFraction = 120, skillLevel = 2;
+        private static readonly int timeBudget = 100, skillLevel = 4;
         private static Process engineProcess;
         private static Board currentBoard;
         private static Move? bestMove;
@@ -48,18 +49,18 @@ namespace ChessChallenge.Example
 
         private static void engineProcessOutputDataReceived(object sender, DataReceivedEventArgs e) {
             string text = e.Data ?? "";
+            //Console.WriteLine("[UCI] " + text);
             if(text.StartsWith("bestmove ")){
                 var temp = text.Replace("bestmove ", "");
                 var ponderIndex = temp.IndexOf(" ponder");
                 var uciMove = ponderIndex < 0 ? temp : temp.Remove(ponderIndex);
                 bestMove = new Move(uciMove, currentBoard);
             }
-            //Debug.WriteLine("[UCI] " + text);
         }
 
         private static void engineProcessErrorDataReceived(object sender, DataReceivedEventArgs e) {
             string text = e.Data ?? "";
-            Debug.WriteLine("[Error] " + text);
+            Console.WriteLine("[Error] " + text);
         }
 
         public Move Think(Board board, Timer timer)
@@ -77,7 +78,6 @@ namespace ChessChallenge.Example
             var boardState = board.GetFenString();
 
             engineSendLine("position fen " + boardState);
-            var timeBudget = timer.MillisecondsRemaining / thinkTimeFraction;
             engineSendLine("go movetime " + timeBudget);
 
             System.Threading.Thread.Sleep(timeBudget);
