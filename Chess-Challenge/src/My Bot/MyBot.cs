@@ -19,7 +19,7 @@ public class MyBot : IChessBot
     const int TTSize = 2^20;
     int[] PieceValue = { 0, 100, 300, 300, 500, 900, 10000 };
     Position[] Transpositions = new Position[TTSize];
-    int timeBudget, selDepth;
+    int timeBudget, selDepth, visitedNodes;
 
     public Move Think(Board board, Timer timer)
     {
@@ -28,10 +28,11 @@ public class MyBot : IChessBot
         bestRootMove = Move.NullMove;
         timeBudget = timer.MillisecondsRemaining / 30;
         int spentTimeBudget = 0, lastIterationTime = 0; // #DEBUG
-        int alpha = -1000000, beta = 1000000;
+        int alpha = -1000000, beta = 1000000, totalVisitedNodes = 0;
         for(int depth = 1; MayThink();)
             try {
                 selDepth = 0;
+                visitedNodes = 0;
                 var score = Search(depth, 0, alpha, beta);
                 if (score <= alpha || score >= beta) {
                     alpha = -1000000;
@@ -43,7 +44,7 @@ public class MyBot : IChessBot
                 beta = score + 50;
                 lastIterationTime = timer.MillisecondsElapsedThisTurn - spentTimeBudget; // #DEBUG
                 spentTimeBudget += lastIterationTime; // #DEBUG
-                Console.WriteLine($"[us] depth {depth} selDepth {selDepth,2} score {score,-10} time {lastIterationTime,5} {bestRootMove}" ); // #DEBUG
+                Console.WriteLine($"[us] depth {depth} selDepth {selDepth,2} score {score,-10} nodes {visitedNodes, -7} time(ms) {lastIterationTime, -5} speed(k/s) {visitedNodes / (lastIterationTime+1), -7} {bestRootMove}" ); // #DEBUG
                 depth++;
             } catch (OutOfTime) {
                 // it's ok, we've got the best move from the previous iteration
@@ -54,6 +55,7 @@ public class MyBot : IChessBot
     int Search(int depth, int dFromRoot, int alpha, int beta, int maxExt = 5)
     {
         selDepth = Math.Max(selDepth, dFromRoot);
+        visitedNodes++;
 
         if (board.IsInCheckmate())
             return dFromRoot - 100000;
