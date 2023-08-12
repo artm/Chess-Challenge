@@ -126,8 +126,8 @@ public class MyBot : IChessBot
         int score = 0;
         for(PieceType pt=PieceType.Pawn; pt<PieceType.King; pt++)
             score += PieceValue[(int)pt] * (
-                board.GetPieceList(pt, board.IsWhiteToMove).Count -
-                board.GetPieceList(pt, !board.IsWhiteToMove).Count);
+                BitboardHelper.GetNumberOfSetBits(board.GetPieceBitboard(pt, board.IsWhiteToMove)) -
+                BitboardHelper.GetNumberOfSetBits(board.GetPieceBitboard(pt, !board.IsWhiteToMove)));
         score += board.GetLegalMoves().Length + board.GetLegalMoves(true).Length;
         if (board.TrySkipTurn()) {
             // their mobility/threats will only be deducted when we're not in
