@@ -95,18 +95,16 @@ public class MyBot : IChessBot
         Move bestMove = Move.NullMove;
         for(int i=0; i<moves.Length; i++) {
             if (!MayThink()) throw new OutOfTime();
-            var (_, iMax) = scores.Select((score, i) => (score, i)).Skip(i).Max();
+            var (_, iMax) = scores.Select((s, i) => (s, i)).Skip(i).Max();
             (scores[i], scores[iMax]) = (scores[iMax], scores[i]);
             (moves[i], moves[iMax]) = (moves[iMax], moves[i]);
-            var move = moves[i];
-            int score;
 
-            board.MakeMove(move);
-            score = board.IsRepeatedPosition() ? 0 : - Search(depth - 1, dFromRoot + 1, - beta, - alpha, maxExt);
-            board.UndoMove(move);
+            board.MakeMove(moves[i]);
+            int score = board.IsRepeatedPosition() ? 0 : - Search(depth - 1, dFromRoot + 1, - beta, - alpha, maxExt);
+            board.UndoMove(moves[i]);
             if (score > alpha) {
                 alpha = score;
-                bestMove = move;
+                bestMove = moves[i];
                 if (alpha >= beta) break;
             }
         }
